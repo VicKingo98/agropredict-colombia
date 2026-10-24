@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta · Estimación del rendimiento municipal de maíz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F5F0; --surface:#FFFFFF; --surface-2:#FAFAF7; --soft:#EEECE5;
+  --line:#DAD8CF; --line-2:#B9B7AD; --ink:#1E2A22; --ink-2:#3B463F; --muted:#55605A;
+  --brand:#1E3B28; --brand-ink:#FFFFFF; --brand-sub:#CFE3D4;
+  --green:#2E6A3E; --green-soft:#EEF3EC; --chip:#E3EEE5;
+  --ochre:#C08A2E; --ochre-dark:#9A6212; --warn-bg:#F3E8D2; --warn-ink:#5A3E0E;
+  --ramp1:#F1E3C3; --ramp2:#D8C98E; --ramp3:#9DBB82; --ramp4:#5C9160; --ramp5:#2E6A3E;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.45}
+a{color:#2E6A3E}a:hover{color:#1E3B28}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px}
+header.top{background:var(--brand);color:var(--brand-ink)}
+header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-top:16px;padding-bottom:16px}
+.brand small{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-sub)}
+.brand strong{font-size:20px;font-weight:600}
+nav.tabs{display:flex;flex-wrap:wrap;gap:4px}
+nav.tabs a{padding:12px 16px;border-radius:6px;color:var(--brand-ink);text-decoration:none}
+nav.tabs a[aria-current="page"]{background:#FFFFFF;color:#1E3B28;font-weight:600}
+main{padding-top:32px;padding-bottom:48px}
+.view{display:none;flex-direction:column;gap:24px}
+.view.active{display:flex}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+h1{margin:0 0 6px;font-size:30px;font-weight:600}
+h2{margin:0;font-size:17px;font-weight:600}
+.sub{margin:0;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.card.lg{padding:24px;gap:16px}
+#prediccion .main-col > .card.lg:first-child{gap:18px}
+.grid{display:grid;gap:16px}
+.g200{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g240{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g340{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.g420{grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.main-col{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.side-col{flex:1 1 300px;min-width:0}
+label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2)}
+select,input[type=search],input[type=text]{height:44px;padding:0 12px;border:1px solid var(--line-2);border-radius:6px;font:inherit;font-size:15px;background:var(--surface);color:var(--ink)}
+input:disabled{background:#F1F0EA;border-color:#D3D1C7;color:var(--muted)}
+.kpi span:first-child{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:600}
+.kpi .u{font-size:16px;font-weight:500;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;border-radius:6px;font:inherit;font-weight:600;text-decoration:none;cursor:pointer;border:1px solid var(--green)}
+.btn.primary{background:var(--green);color:#FFFFFF}
+.btn.ghost{background:var(--surface);color:var(--green)}
+.btn.block{display:flex;width:100%;height:48px}
+.seg{display:inline-flex;align-self:flex-start;padding:4px;background:var(--soft);border-radius:8px;gap:4px}
+.seg button{height:44px;padding:0 18px;border:0;border-radius:6px;font:inherit;cursor:pointer;background:transparent;color:var(--ink-2);font-weight:500}
+.seg button[aria-pressed="true"]{background:#FFFFFF;color:#1E3B28;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.opt{text-align:left;padding:14px 16px;border-radius:8px;font:inherit;cursor:pointer;min-height:44px;border:1px solid #D3D1C7;background:var(--surface);color:var(--ink)}
+.opt[aria-pressed="true"]{border:2px solid var(--green);background:var(--green-soft)}
+.opt b{display:block;font-size:15px}
+.opt span{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 6px 6px 12px;background:var(--chip);border-radius:999px;font-size:14px}
+.chip button{width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:#1E3B28;font-size:16px;cursor:pointer}
+.drop{border:2px dashed var(--line-2);border-radius:10px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;background:var(--surface-2)}
+.pending{border:1px dashed var(--line-2);border-radius:8px;padding:16px;background:var(--surface-2)}
+.tag{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--warn-bg);color:var(--warn-ink);font-weight:600}
+.map{height:300px;border:1px dashed var(--line-2);border-radius:8px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink-2);padding:16px}
+.ramp{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.ramp div{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:10px;border-radius:5px;overflow:hidden}
+.note{font-size:12px;color:var(--muted);margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:20px;font-size:13px;color:var(--ink-2)}
+.legend span{display:flex;align-items:center;gap:8px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:600px}
+th{text-align:left;color:var(--muted);font-weight:500;padding:10px 8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--soft)}
+dl.facts{margin:0;display:grid;grid-template-columns:auto 1fr;gap:10px 16px;font-size:14px}
+dl.facts dt{color:var(--muted)}
+dl.facts dd{margin:0;font-weight:500}
+.hero{background:var(--brand);color:#FFFFFF;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:6px}
+.hero small{color:var(--brand-sub);font-size:13px}
+.hero .v{font-size:40px;font-weight:700}
+.bar{height:12px;background:var(--soft);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%}
+.metric{background:#F6F5F0;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.warn{margin:0;padding:14px 16px;border-radius:8px;background:var(--warn-bg);color:var(--warn-ink);font-size:14px}
+svg text{fill:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:11px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><small>UPRA · Prototipo exploratorio</small><strong>Rendimiento de maíz municipal</strong></div>
+    <nav class="tabs" aria-label="Secciones">
+      <a href="#historico">Consulta histórica</a>
+      <a href="#prediccion">Predicción</a>
+      <a href="#resultados">Resultados</a>
+      <a href="#modelo">Acerca del modelo</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- 1. CONSULTA HISTÓRICA -->
+<section class="view" id="historico" aria-labelledby="t-hist">
+  <div class="head">
+    <div><h1 id="t-hist">Consulta histórica</h1><p class="sub">Rendimiento del cultivo de maíz según las Evaluaciones Agropecuarias Municipales (EVA) 2019–2025.</p></div>
+    <a class="btn primary" href="#prediccion">Predecir para esta selección</a>
+  </div>
+  <div class="card grid g200" aria-label="Filtros">
+    <label class="field">Departamento<select><option>Todos</option></select></label>
+    <label class="field">Municipio<select><option>Todos</option></select></label>
+    <label class="field">Sistema productivo<select><option>Todos</option><option>Tradicional</option><option>Tecnificado</option></select></label>
+    <label class="field">Años<select><option>2019 – 2025</option></select></label>
+  </div>
+  <div class="grid g200">
+    <div class="card kpi"><span>Registros</span><span class="v">21.992</span></div>
+    <div class="card kpi"><span>Municipios</span><span class="v">1.050</span></div>
+    <div class="card kpi"><span>Rendimiento medio</span><span class="v">2,19 <span class="u">t/ha</span></span></div>
+    <div class="card kpi"><span>Rendimiento mediano</span><span class="v">1,60 <span class="u">t/ha</span></span></div>
+  </div>
+  <div class="grid g420">
+    <div class="card">
+      <h2>Rendimiento medio por municipio</h2>
+      <div class="map">Mapa coroplético de Colombia por municipio<br>(color según rendimiento medio en t/ha)</div>
+      <div class="ramp"><span>Bajo</span><div><i style="background:var(--ramp1)"></i><i style="background:var(--ramp2)"></i><i style="background:var(--ramp3)"></i><i style="background:var(--ramp4)"></i><i style="background:var(--ramp5)"></i></div><span>Alto</span></div>
+    </div>
+    <div class="card">
+      <div class="head" style="align-items:baseline"><h2>Evolución del rendimiento medio</h2><span class="note">Trazado ilustrativo</span></div>
+      <svg viewBox="0 0 520 250" role="img" aria-label="Rendimiento medio anual por sistema productivo, 2019 a 2025">
+        <g stroke="var(--line)"><line x1="50" y1="20" x2="490" y2="20"/><line x1="50" y1="80" x2="490" y2="80"/><line x1="50" y1="140" x2="490" y2="140"/><line x1="50" y1="200" x2="490" y2="200" stroke="var(--line-2)"/></g>
+        <text x="40" y="24" text-anchor="end">6</text><text x="40" y="84" text-anchor="end">4</text><text x="40" y="144" text-anchor="end">2</text><text x="40" y="204" text-anchor="end">0</text>
+        <text x="60" y="222" text-anchor="middle">2019</text><text x="130" y="222" text-anchor="middle">2020</text><text x="200" y="222" text-anchor="middle">2021</text><text x="270" y="222" text-anchor="middle">2022</text><text x="340" y="222" text-anchor="middle">2023</text><text x="410" y="222" text-anchor="middle">2024</text><text x="480" y="222" text-anchor="middle">2025</text>
+        <text x="14" y="110" transform="rotate(-90 14 110)" text-anchor="middle">t/ha</text>
+        <polyline fill="none" stroke="var(--green)" stroke-width="3" points="60,45.5 130,50 200,74 270,77 340,80 410,83 480,85.1"/>
+        <polyline fill="none" stroke="var(--ochre)" stroke-width="3" stroke-dasharray="7 5" points="60,129.8 130,131 200,149 270,152 340,153.5 410,155 480,154.7"/>
+      </svg>
+      <div class="legend"><span><i style="width:24px;height:3px;background:var(--green)"></i>Tecnificado</span><span><i style="width:24px;border-top:3px dashed var(--ochre)"></i>Tradicional</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Ranking de territorios por rendimiento medio</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Departamento</th><th>Rendimiento medio (t/ha)</th><th>Registros (n)</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Valle del Cauca</td><td>3,62</td><td>[n]</td></tr>
+        <tr><td>2</td><td>Meta</td><td>3,57</td><td>[n]</td></tr>
+        <tr><td>3</td><td>Tolima</td><td>3,14</td><td>[n]</td></tr>
+        <tr><td>…</td><td>[Departamento]</td><td>[valor]</td><td>[n]</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Solo territorios con al menos 100 registros. Fuente: UPRA, EVA 2019–2025.</p>
+  </div>
+</section>
+
+<!-- 2. PREDICCIÓN -->
+<section class="view" id="prediccion" aria-labelledby="t-pred">
+  <div><h1 id="t-pred">Nueva estimación</h1><p class="sub">Seleccione uno o varios territorios y el periodo para estimar el rendimiento del maíz (t/ha).</p></div>
+  <div class="row">
+    <div class="main-col">
+      <div class="card lg">
+        <h2>1. Territorios</h2>
+        <div class="seg" role="group" aria-label="Alcance de la estimación">
+          <button type="button" data-alcance="uno" aria-pressed="true">Un territorio</button>
+          <button type="button" data-alcance="varios" aria-pressed="false">Varios territorios</button>
+        </div>
+        <div id="p-uno" class="grid g240">
+          <label class="field">Departamento<select><option>[Seleccione departamento]</option></select></label>
+          <label class="field">Municipio<select><option>[Seleccione municipio]</option></select></label>
+        </div>
+        <div id="p-varios" hidden style="display:flex;flex-direction:column;gap:16px">
+          <div class="grid g200" role="group" aria-label="Forma de selección">
+            <button type="button" class="opt" data-modo="lista" aria-pressed="true"><b>Seleccionar municipios</b><span>Elegir uno a uno desde un buscador</span></button>
+            <button type="button" class="opt" data-modo="depto" aria-pressed="false"><b>Departamento completo</b><span>Todos los municipios de un departamento</span></button>
+            <button type="button" class="opt" data-modo="archivo" aria-pressed="false"><b>Cargar archivo</b><span>Lista en CSV o Excel</span></button>
+          </div>
+          <div data-panel="lista" style="display:flex;flex-direction:column;gap:10px">
+            <label class="field">Buscar y agregar municipios<input type="search" placeholder="Nombre o código DANE"></label>
+            <div class="chips">
+              <span class="chip">[Municipio 1]<button type="button" aria-label="Quitar Municipio 1">×</button></span>
+              <span class="chip">[Municipio 2]<button type="button" aria-label="Quitar Municipio 2">×</button></span>
+              <span class="chip">[Municipio 3]<button type="button" aria-label="Quitar Municipio 3">×</button></span>
+            </div>
+          </div>
+          <label class="field" data-panel="depto" hidden style="max-width:360px">Departamento<select><option>[Seleccione departamento]</option></select><span style="font-weight:400;color:var(--muted)">Se estimarán todos sus municipios con registros de maíz.</span></label>
+          <div class="drop" data-panel="archivo" hidden>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>
+            <b>Arrastre un archivo CSV o Excel</b>
+            <span class="note" style="font-size:13px">Una fila por territorio: código DANE del municipio y periodo</span>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center"><button type="button" class="btn ghost">Seleccionar archivo</button><a href="#prediccion" style="display:inline-flex;align-items:center;height:44px;padding:0 8px">Descargar plantilla</a></div>
+          </div>
+        </div>
+      </div>
+      <div class="card lg">
+        <h2>2. Periodo a estimar</h2>
+        <div class="grid g240">
+          <label class="field">Año<select><option>[Año]</option></select></label>
+          <label class="field">Periodo<select><option>[Periodo]</option></select></label>
+        </div>
+      </div>
+      <div class="card lg">
+        <div class="head" style="align-items:baseline"><h2>3. Parámetros adicionales</h2><span class="tag">Variables del modelo por definir</span></div>
+        <div class="pending grid g200">
+          <label class="field" style="color:var(--muted)">[Variable 1]<input type="text" disabled placeholder="Por definir"></label>
+          <label class="field" style="color:var(--muted)">[Variable 2]<input type="text" disabled placeholder="Por definir"></label>
+          <label class="field" style="color:var(--muted)">[Variable 3]<input type="text" disabled placeholder="Por definir"></label>
+        </div>
+      </div>
+    </div>
+    <aside class="side-col card lg">
+      <h2>Resumen de la consulta</h2>
+      <dl class="facts">
+        <dt>Alcance</dt><dd id="r-alcance">Un territorio</dd>
+        <dt>Territorios</dt><dd id="r-terr">[Municipio, Departamento]</dd>
+        <dt>Periodo</dt><dd>[Año · Periodo]</dd>
+        <dt>Cultivo</dt><dd>Maíz</dd>
+        <dt>Modelo</dt><dd>[Versión]</dd>
+      </dl>
+      <a class="btn primary block" href="#resultados" id="go-res">Generar estimación</a>
+      <p class="note">Las estimaciones son exploratorias y no constituyen estadística oficial.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 3. RESULTADOS -->
+<section class="view" id="resultados" aria-labelledby="t-res">
+  <div class="head">
+    <div><h1 id="t-res">Resultados de la estimación</h1><p class="sub">Maíz · [Año · Periodo] · Modelo [versión]</p></div>
+    <div class="seg" role="group" aria-label="Tipo de resultado">
+      <button type="button" data-vista="uno" aria-pressed="true">Un territorio</button>
+      <button type="button" data-vista="varios" aria-pressed="false">Varios territorios</button>
+    </div>
+  </div>
+
+  <div id="r-uno" style="display:flex;flex-direction:column;gap:16px">
+    <div class="grid g240">
+      <div class="hero"><small>[Municipio], [Departamento]</small><span>Rendimiento estimado</span><span class="v">[X,XX] <span style="font-size:18px;font-weight:500">t/ha</span></span></div>
+      <div class="card lg kpi"><span>Rango probable</span><span class="v">[mín] – [máx] <span class="u">t/ha</span></span></div>
+      <div class="card lg kpi"><span>Frente al promedio histórico del municipio</span><span class="v">[± X %]</span></div>
+    </div>
+    <div class="grid g420">
+      <div class="card">
+        <div class="head" style="align-items:baseline"><h2>Histórico del municipio y estimación</h2><span class="note">Trazado ilustrativo</span></div>
+        <svg viewBox="0 0 520 240" role="img" aria-label="Serie histórica del municipio con el valor estimado y su rango al final">
+          <line x1="40" y1="200" x2="500" y2="200" stroke="var(--line-2)"/><line x1="40" y1="20" x2="40" y2="200" stroke="var(--line-2)"/>
+          <polyline fill="none" stroke="var(--green)" stroke-width="3" points="60,90 120,80 180,120 240,110 300,125 360,118 420,122"/>
+          <g fill="var(--green)"><circle cx="60" cy="90" r="4"/><circle cx="120" cy="80" r="4"/><circle cx="180" cy="120" r="4"/><circle cx="240" cy="110" r="4"/><circle cx="300" cy="125" r="4"/><circle cx="360" cy="118" r="4"/><circle cx="420" cy="122" r="4"/></g>
+          <line x1="420" y1="122" x2="480" y2="112" stroke="var(--ochre)" stroke-width="3" stroke-dasharray="6 5"/>
+          <g stroke="var(--ochre-dark)" stroke-width="2"><line x1="480" y1="82" x2="480" y2="142"/><line x1="472" y1="82" x2="488" y2="82"/><line x1="472" y1="142" x2="488" y2="142"/></g>
+          <rect x="473" y="105" width="14" height="14" fill="var(--ochre)" transform="rotate(45 480 112)"/>
+          <text x="60" y="218" text-anchor="middle">Periodo 1</text><text x="240" y="218" text-anchor="middle">…</text><text x="420" y="218" text-anchor="middle">Último</text><text x="480" y="234" text-anchor="middle">Estimado</text>
+          <text x="16" y="110" transform="rotate(-90 16 110)" text-anchor="middle">t/ha</text>
+        </svg>
+      </div>
+      <div class="card" style="gap:16px">
+        <h2>Comparación de referencia</h2>
+        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span>Estimación del municipio</span><b>[X,XX] t/ha</b></div><div class="bar"><i style="width:62%;background:var(--ochre)"></i></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span>Promedio histórico del municipio</span><b>[X,XX] t/ha</b></div><div class="bar"><i style="width:55%;background:var(--ramp5)"></i></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span>Promedio del departamento</span><b>[X,XX] t/ha</b></div><div class="bar"><i style="width:70%;background:var(--ramp4)"></i></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span>Promedio nacional</span><b>[X,XX] t/ha</b></div><div class="bar"><i style="width:48%;background:var(--ramp3)"></i></div></div>
+        <p class="note">Barras ilustrativas; los valores se calculan con la base EVA.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="r-varios" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="grid g240">
+      <div class="card kpi"><span>Territorios estimados</span><span class="v">[n]</span></div>
+      <div class="card kpi"><span>Rendimiento medio estimado</span><span class="v">[X,XX] <span class="u">t/ha</span></span></div>
+      <div class="card kpi"><span>Por debajo de su histórico</span><span class="v">[n] <span class="u">territorios</span></span></div>
+    </div>
+    <div class="row">
+      <div class="main-col card">
+        <div class="head" style="align-items:center"><h2>Estimaciones por territorio</h2><div style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn ghost">Descargar CSV</button><button type="button" class="btn ghost">Descargar Excel</button></div></div>
+        <div class="scroll"><table>
+          <thead><tr><th>Municipio</th><th>Departamento</th><th>Estimado (t/ha)</th><th>Rango</th><th>Vs. histórico</th></tr></thead>
+          <tbody id="tabla-varios"></tbody>
+        </table></div>
+      </div>
+      <div class="side-col card">
+        <h2>Mapa de estimaciones</h2>
+        <div class="map">Municipios seleccionados coloreados según el rendimiento estimado</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="warn">Estimación exploratoria de apoyo al análisis territorial. No constituye estadística oficial ni recomendación agronómica.</p>
+</section>
+
+<!-- 4. ACERCA DEL MODELO -->
+<section class="view" id="modelo" aria-labelledby="t-mod">
+  <div><h1 id="t-mod">Acerca del modelo</h1><p class="sub">Información para interpretar correctamente las estimaciones.</p></div>
+  <div class="grid g340">
+    <div class="card lg">
+      <h2>Ficha general</h2>
+      <dl class="facts">
+        <dt>Fuente de datos</dt><dd>Evaluaciones Agropecuarias Municipales (EVA) 2019–2025, UPRA</dd>
+        <dt>Cultivo</dt><dd>Maíz (tradicional y tecnificado)</dd>
+        <dt>Variable objetivo</dt><dd>Rendimiento municipal (t/ha)</dd>
+        <dt>Método</dt><dd style="color:var(--muted)">[Por definir]</dd>
+        <dt>Versión</dt><dd style="color:var(--muted)">[v0.0]</dd>
+        <dt>Última actualización</dt><dd style="color:var(--muted)">[Fecha]</dd>
+      </dl>
+    </div>
+    <div class="card lg">
+      <h2>Desempeño en validación</h2>
+      <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+        <div class="metric"><span class="note" style="font-size:13px">MAE</span><b style="font-size:22px">[—]</b><span class="note">t/ha</span></div>
+        <div class="metric"><span class="note" style="font-size:13px">RMSE</span><b style="font-size:22px">[—]</b><span class="note">t/ha</span></div>
+        <div class="metric"><span class="note" style="font-size:13px">R²</span><b style="font-size:22px">[—]</b><span class="note">&nbsp;</span></div>
+      </div>
+      <p class="note" style="font-size:13px">Métricas por definir según el método seleccionado; se reportarán también por sistema productivo.</p>
+    </div>
+  </div>
+  <div class="card lg">
+    <h2>Variables utilizadas</h2>
+    <div class="chips">
+      <span class="chip" style="background:transparent;border:1px dashed var(--line-2);color:var(--muted);padding:6px 12px">[Variable 1]</span>
+      <span class="chip" style="background:transparent;border:1px dashed var(--line-2);color:var(--muted);padding:6px 12px">[Variable 2]</span>
+      <span class="chip" style="background:transparent;border:1px dashed var(--line-2);color:var(--muted);padding:6px 12px">[Variable 3]</span>
+      <span class="chip" style="background:transparent;border:1px dashed var(--line-2);color:var(--muted);padding:6px 12px">[…]</span>
+    </div>
+    <p class="note" style="font-size:13px">Solo se usan variables disponibles antes del periodo a estimar.</p>
+  </div>
+  <div class="card lg">
+    <h2>Limitaciones conocidas</h2>
+    <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">
+      <li>No incorpora información meteorológica ni características del suelo.</li>
+      <li>La fuente presenta cambios metodológicos y de cobertura entre 2021 y 2022 que afectan la comparabilidad histórica.</li>
+      <li>Municipios con pocos registros o rendimientos nulos frecuentes tienen estimaciones menos confiables.</li>
+      <li>Las estimaciones son exploratorias: no sustituyen estadísticas oficiales ni estudios agronómicos.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function () {
+  // Navegación entre las cuatro vistas por clic (no depende de hashchange)
+  var vistas = ['historico', 'prediccion', 'resultados', 'modelo'];
+  function mostrar(id) {
+    if (vistas.indexOf(id) === -1) id = 'historico';
+    vistas.forEach(function (v) {
+      document.getElementById(v).classList.toggle('active', v === id);
+    });
+    document.querySelectorAll('nav.tabs a').forEach(function (a) {
+      if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('a[href^="#"]');
+    if (!a) return;
+    var id = a.getAttribute('href').slice(1);
+    if (vistas.indexOf(id) === -1) return;
+    ev.preventDefault();
+    if (a.id === 'go-res') pintarResultados(estado.alcance);
+    mostrar(id);
+  });
+  mostrar(location.hash.replace('#', ''));
+
+  function marcar(botones, activo, attr) {
+    botones.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset[attr] === activo ? 'true' : 'false'); });
+  }
+
+  // Predicción: uno vs varios territorios
+  var estado = { alcance: 'uno', modo: 'lista' };
+  var textoTerr = { lista: '3 municipios', depto: '[n] municipios del departamento', archivo: '[n] filas del archivo' };
+  var btnAlcance = document.querySelectorAll('[data-alcance]');
+  var btnModo = document.querySelectorAll('[data-modo]');
+  function pintarPrediccion() {
+    var uno = estado.alcance === 'uno';
+    marcar(btnAlcance, estado.alcance, 'alcance');
+    marcar(btnModo, estado.modo, 'modo');
+    document.getElementById('p-uno').hidden = !uno;
+    document.getElementById('p-varios').hidden = uno;
+    document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== estado.modo; });
+    document.getElementById('r-alcance').textContent = uno ? 'Un territorio' : 'Varios territorios';
+    document.getElementById('r-terr').textContent = uno ? '[Municipio, Departamento]' : textoTerr[estado.modo];
+  }
+  btnAlcance.forEach(function (b) { b.addEventListener('click', function () { estado.alcance = b.dataset.alcance; pintarPrediccion(); }); });
+  btnModo.forEach(function (b) { b.addEventListener('click', function () { estado.modo = b.dataset.modo; pintarPrediccion(); }); });
+  pintarPrediccion();
+
+  // Resultados: vista según alcance elegido (y conmutable)
+  var btnVista = document.querySelectorAll('[data-vista]');
+  function pintarResultados(v) {
+    marcar(btnVista, v, 'vista');
+    document.getElementById('r-uno').hidden = v !== 'uno';
+    document.getElementById('r-varios').hidden = v !== 'varios';
+  }
+  btnVista.forEach(function (b) { b.addEventListener('click', function () { pintarResultados(b.dataset.vista); }); });
+  pintarResultados('uno');
+
+  // Filas de ejemplo de la tabla multiterritorio
+  var tbody = document.getElementById('tabla-varios');
+  for (var i = 1; i <= 5; i++) {
+    var tr = document.createElement('tr');
+    ['[Municipio ' + i + ']', '[Departamento]', '[X,XX]', '[mín] – [máx]', '[± X %]'].forEach(function (t, k) {
+      var td = document.createElement('td');
+      td.textContent = t;
+      if (k === 2) td.style.fontWeight = '600';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+})();
+</script>
+</body>
+</html>
