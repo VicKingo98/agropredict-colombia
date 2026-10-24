@@ -65,6 +65,10 @@ input:disabled{background:#F1F0EA;border-color:#D3D1C7;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 6px 6px 12px;background:var(--chip);border-radius:999px;font-size:14px}
 .chip button{width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:#1E3B28;font-size:16px;cursor:pointer}
+.tpl{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.tpl .note:empty{display:none}
+.tpl .note{flex-basis:100%}
+code{font-family:inherit;font-weight:600;color:var(--ink-2)}
 .drop{border:2px dashed var(--line-2);border-radius:10px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;background:var(--surface-2)}
 .pending{border:1px dashed var(--line-2);border-radius:8px;padding:16px;background:var(--surface-2)}
 .tag{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--warn-bg);color:var(--warn-ink);font-weight:600}
@@ -189,11 +193,24 @@ svg text{fill:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:11px
             </div>
           </div>
           <label class="field" data-panel="depto" hidden style="max-width:360px">Departamento<select><option>[Seleccione departamento]</option></select><span style="font-weight:400;color:var(--muted)">Se estimarán todos sus municipios con registros de maíz.</span></label>
-          <div class="drop" data-panel="archivo" hidden>
+          <div data-panel="archivo" hidden style="display:flex;flex-direction:column;gap:12px">
+          <div class="drop">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg>
             <b>Arrastre un archivo CSV o Excel</b>
-            <span class="note" style="font-size:13px">Una fila por territorio: código DANE del municipio y periodo</span>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center"><button type="button" class="btn ghost">Seleccionar archivo</button><a href="#prediccion" style="display:inline-flex;align-items:center;height:44px;padding:0 8px">Descargar plantilla</a></div>
+            <span class="note" style="font-size:13px">Use la plantilla para evitar errores de formato: una fila por territorio.</span>
+            <button type="button" class="btn primary">Seleccionar archivo</button>
+          </div>
+          <div class="tpl" data-panel-extra="archivo">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <b style="font-size:15px">Plantilla de carga</b>
+              <span class="note" style="font-size:13px">Columnas: <code>cod_dane_municipio</code> (5 dígitos, con cero inicial), <code>anio</code> (AAAA) y <code>periodo</code> (A o B).</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <button type="button" class="btn ghost" id="dl-csv">Descargar plantilla CSV</button>
+              <button type="button" class="btn ghost" id="dl-xlsx">Descargar plantilla Excel</button>
+            </div>
+            <p class="note" id="dl-msg" role="status"></p>
+          </div>
           </div>
         </div>
       </div>
@@ -341,6 +358,7 @@ svg text{fill:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:11px
 
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function () {
   // Navegación entre las cuatro vistas por clic (no depende de hashchange)
@@ -400,6 +418,43 @@ svg text{fill:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:11px
   }
   btnVista.forEach(function (b) { b.addEventListener('click', function () { pintarResultados(b.dataset.vista); }); });
   pintarResultados('uno');
+
+
+  // Plantillas de carga
+  var COLUMNAS = ['cod_dane_municipio', 'anio', 'periodo'];
+  var msg = document.getElementById('dl-msg');
+  function bajar(blob, nombre) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
+    msg.textContent = 'Plantilla descargada: ' + nombre;
+  }
+  document.getElementById('dl-csv').addEventListener('click', function () {
+    // Separador ";" y BOM UTF-8 para que Excel en español lo abra en columnas
+    var csv = '\ufeff' + COLUMNAS.join(';') + '\r\n';
+    bajar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'plantilla_prediccion_maiz.csv');
+  });
+  document.getElementById('dl-xlsx').addEventListener('click', function () {
+    if (!window.XLSX) { msg.textContent = 'No se pudo generar el Excel sin conexión. Use la plantilla CSV.'; return; }
+    var wb = XLSX.utils.book_new();
+    var datos = XLSX.utils.aoa_to_sheet([COLUMNAS]);
+    datos['!cols'] = [{ wch: 20 }, { wch: 8 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, datos, 'datos');
+    var instr = XLSX.utils.aoa_to_sheet([
+      ['Columna', 'Descripción', 'Formato', 'Ejemplo'],
+      ['cod_dane_municipio', 'Código DANE del municipio', 'Texto de 5 dígitos, conservar el cero inicial', '05001'],
+      ['anio', 'Año a estimar', 'Número AAAA', '2026'],
+      ['periodo', 'Semestre agrícola', 'A o B', 'A'],
+      [],
+      ['Diligencie solo la hoja "datos", una fila por territorio, sin cambiar los encabezados.']
+    ]);
+    instr['!cols'] = [{ wch: 20 }, { wch: 28 }, { wch: 44 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, instr, 'instrucciones');
+    var buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    bajar(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'plantilla_prediccion_maiz.xlsx');
+  });
 
   // Filas de ejemplo de la tabla multiterritorio
   var tbody = document.getElementById('tabla-varios');
