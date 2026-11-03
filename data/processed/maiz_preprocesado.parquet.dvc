@@ -1,0 +1,5 @@
+outs:
+- md5: dde6fea0e9dad3e630350580b5ed9ce5
+  size: 195453
+  hash: md5
+  path: maiz_preprocesado.parquet

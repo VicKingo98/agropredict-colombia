@@ -1,0 +1,5 @@
+outs:
+- md5: 2280e7c5ba9a1ebe08b393ed8fc20bad
+  size: 2022303
+  hash: md5
+  path: maiz_preprocesado.csv
