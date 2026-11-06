@@ -1,0 +1,5 @@
+outs:
+- md5: daa54beb8e4897de2811c89b6f193e0b
+  size: 193564
+  hash: md5
+  path: features_estacional.parquet
