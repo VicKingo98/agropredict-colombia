@@ -1,0 +1,5 @@
+outs:
+- md5: 6f7ca59bb1726a9859f4e29e8adced79
+  size: 455197
+  hash: md5
+  path: xgboost_maiz_optimizado.skops
