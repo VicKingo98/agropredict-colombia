@@ -1,0 +1,5 @@
+outs:
+- md5: 228e49c91b8dd97bfac0018dc95ae471
+  size: 193893
+  hash: md5
+  path: features_secuencial.parquet
