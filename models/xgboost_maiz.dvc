@@ -1,0 +1,6 @@
+outs:
+- md5: a784644084bc20785a0bb3c5ddcf6def.dir
+  size: 245946
+  nfiles: 5
+  hash: md5
+  path: xgboost_maiz
