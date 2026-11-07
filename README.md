@@ -19,7 +19,7 @@ Los datos originales se gestionan con DVC y se almacenan en Google Drive.
 
 - data/raw: datos originales.
 - data/processed: datos procesados.
-- notebooks: análisis exploratorio.
+- notebooks: EDA, preprocesamiento, variables, modelado y optimización.
 - src: procesamiento y modelos.
 - api: servicio de predicción.
 - dashboard: visualizaciones interactivas.
@@ -27,6 +27,14 @@ Los datos originales se gestionan con DVC y se almacenan en Google Drive.
 - tests: pruebas.
 
 ## Instalación
+Crear y activar un ambiente virtual (Windows PowerShell):
+
+```bash
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+> Si PowerShell muestra "la ejecución de scripts está deshabilitada", ejecutar una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` y volver a activar.
 
 Instalar las dependencias:
 
@@ -86,9 +94,49 @@ dvc pull
 
 > **Nota:** las cuentas de servicio no tienen cuota de almacenamiento propia en Google Drive, por lo que `dvc push` puede fallar si la carpeta está en un *Mi unidad* personal. Para subir datos con cuenta de servicio, la carpeta debe estar en una **unidad compartida**; de lo contrario, usar la opción 2.
 
+### Error de token vencido
+
+Si `dvc pull` muestra `invalid_grant: Token has been expired or revoked`, borrar las credenciales guardadas y volver a autenticar (Windows PowerShell):
+
+```bash
+Get-ChildItem $env:LOCALAPPDATA -Recurse -Filter default.json -ErrorAction SilentlyContinue | Where-Object FullName -match 'pydrive2fs' | Remove-Item
+dvc pull
+```
+
+## Configuración de MLflow
+
+Los notebooks leen la configuración desde `config/.env` (no se versiona). Copiar `config/.env.example` como `config/.env` y elegir el servidor:
+
+- **Local:** `MLFLOW_TRACKING_URI=http://localhost:5000`
+- **Servidor compartido en AWS EC2:** `MLFLOW_TRACKING_URI=http://IP_DE_LA_EC2:5000`
+
+Para usar el servidor compartido:
+
+1. Obtener la IP pública propia y enviarla al administrador de la instancia para que la agregue al grupo de seguridad (el puerto 5000 solo acepta IPs autorizadas):
+   ```bash
+   curl.exe -4 https://checkip.amazonaws.com
+   ```
+2. Pedir la IP actual de la EC2 (cambia cada vez que se reinicia la instancia) y ponerla en `config/.env`.
+3. Verificar el acceso abriendo `http://IP_DE_LA_EC2:5000` en el navegador.
+4. Reiniciar el kernel del notebook para que lea el `.env` actualizado.
+5. Recomendado: agregar a cada corrida un tag `autor` con el nombre de quien la ejecutó.
+
+> No ejecutar las celdas de registro de experimentos sin haber configurado el `.env`.
+
+## Ejecución
+
+Seleccionar el kernel `.venv` y ejecutar los notebooks en orden:
+
+1. `02_preprocesamiento_maiz.ipynb`: limpieza y filtrado de datos.
+2. `03_featuring.ipynb`: construcción de variables (estacionales y secuenciales).
+3. `04_modelado.ipynb`: modelos iniciales (Ridge, Random Forest, XGBoost).
+4. `05_optimizacion_modelos.ipynb`: optimización de hiperparámetros, comparación con baseline y modelo final.
+
+
 ## Estado
 
-- Repositorio GitHub configurado.
-- Versionamiento de datos con DVC.
-- Análisis exploratorio en desarrollo.
-- Modelo predictivo, API y tablero pendientes.
+- Repositorio GitHub y versionamiento de datos y modelo con DVC.
+- Preprocesamiento y construcción de variables completados.
+- Modelos Ridge, Random Forest y XGBoost evaluados frente a un baseline de persistencia con validación temporal; XGBoost seleccionado como modelo final.
+- Experimentos registrados en MLflow sobre AWS EC2.
+- Tablero en desarrollo; API pendiente.
