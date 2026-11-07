@@ -1,0 +1,20 @@
+# Procesamiento de datos
+pandas==3.1.0
+numpy==2.5.4
+pyarrow==26.0.1
+
+# Machine Learning
+scikit-learn==1.9.1
+xgboost==3.4.1
+
+# Experimentación y registro de modelos
+mlflow==3.18.0
+skops==0.16.0
+python-dotenv==1.2.4
+
+# Visualización
+matplotlib==3.11.2
+seaborn==0.13.2
+
+# Entorno de notebooks
+jupyterlab==4.6.4
