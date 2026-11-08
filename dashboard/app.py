@@ -105,6 +105,50 @@ def crear_figura_historica(departamento=None, municipio=None, sistema=None, anio
     return figura
 
 
+
+def calcular_promedios_historicos(departamento, municipio, sistema, anio, semestre):
+    """Calcula referencias históricas anteriores al período consultado."""
+
+    periodo_objetivo = int(anio) * 2 + int(semestre)
+
+    datos = df.loc[
+        (df["sistema_productivo"] == sistema)
+        & ((df["anio"] * 2 + df["semestre_b"]) < periodo_objetivo)
+    ].copy()
+
+    def rendimiento_ponderado(subconjunto):
+        datos_validos = subconjunto.loc[
+            subconjunto["area_cosechada"].notna()
+            & subconjunto["produccion"].notna()
+            & (subconjunto["area_cosechada"] > 0)
+        ]
+
+        if datos_validos.empty:
+            return None
+
+        area = datos_validos["area_cosechada"].sum()
+
+        if area <= 0:
+            return None
+
+        return float(datos_validos["produccion"].sum() / area)
+
+    municipal = datos.loc[
+        (datos["departamento"] == departamento)
+        & (datos["cod_municipio"] == municipio)
+    ]
+
+    departamental = datos.loc[
+        datos["departamento"] == departamento
+    ]
+
+    return {
+        "municipal": rendimiento_ponderado(municipal),
+        "departamental": rendimiento_ponderado(departamental),
+        "nacional": rendimiento_ponderado(datos),
+    }
+
+
 # Modelo optimizado y validado con datos de 2025
 RUTA_MODELO = ROOT / "models/xgboost_maiz_optimizado.skops"
 
@@ -971,7 +1015,14 @@ def generar_prediccion(
     if not pd.notna(estimacion):
         return html.P("El modelo no produjo una estimación válida."), None
 
+    promedios = calcular_promedios_historicos(
+        departamento, municipio, sistema, anio, semestre
+    )
+
     datos_resultado = {
+        "promedio_municipal": promedios["municipal"],
+        "promedio_departamental": promedios["departamental"],
+        "promedio_nacional": promedios["nacional"],
         "municipio": str(registro["municipio"]),
         "departamento": str(departamento),
         "sistema": str(sistema),
@@ -1120,6 +1171,129 @@ def mostrar_resultados(datos):
         height=380,
     )
 
+
+    # Comparación con referencias históricas anteriores al período consultado
+    promedio_municipal = datos.get("promedio_municipal")
+    promedio_departamental = datos.get("promedio_departamental")
+    promedio_nacional = datos.get("promedio_nacional")
+
+    referencias = [
+        ("Municipio", promedio_municipal),
+        ("Departamento", promedio_departamental),
+        ("Colombia", promedio_nacional),
+    ]
+
+    comparacion_historica = pd.DataFrame(
+        [
+            {"Territorio": nombre, "Rendimiento": valor}
+            for nombre, valor in referencias
+            if valor is not None and pd.notna(valor)
+        ]
+    )
+
+    if not comparacion_historica.empty:
+        figura_historica = px.bar(
+            comparacion_historica,
+            x="Territorio",
+            y="Rendimiento",
+            text="Rendimiento",
+            color="Territorio",
+            color_discrete_map={
+                "Municipio": "#286A3B",
+                "Departamento": "#D58A25",
+                "Colombia": "#64748B",
+            },
+            labels={
+                "Territorio": "",
+                "Rendimiento": "Rendimiento histórico (t/ha)",
+            },
+            template="plotly_white",
+        )
+
+        figura_historica.update_traces(
+            texttemplate="%{text:.2f}",
+            textposition="outside",
+            hovertemplate="%{x}: %{y:.2f} t/ha<extra></extra>",
+        )
+
+        figura_historica.update_layout(
+            showlegend=False,
+            height=360,
+            margin=dict(l=30, r=30, t=35, b=30),
+            yaxis_range=[
+                0,
+                max(comparacion_historica["Rendimiento"].max(), 0.1) * 1.25,
+            ],
+        )
+
+        grafica_historica = dcc.Graph(figure=figura_historica)
+    else:
+        grafica_historica = html.P(
+            "No hay registros históricos disponibles para esta selección."
+        )
+
+    if promedio_municipal is not None and promedio_municipal > 0:
+        variacion = (
+            (estimado - promedio_municipal) / promedio_municipal
+        ) * 100
+
+        signo = "+" if variacion > 0 else ""
+
+        texto_variacion = f"{signo}{variacion:.2f}%"
+        explicacion_variacion = (
+            "Variación de la estimación XGBoost frente al "
+            "rendimiento histórico municipal."
+        )
+    else:
+        texto_variacion = "No disponible"
+        explicacion_variacion = (
+            "No existen datos suficientes para calcular "
+            "la variación frente al promedio municipal."
+        )
+
+    seccion_historica = html.Div([
+        html.H3(
+            "Comparación con rendimientos históricos",
+            style={"color": "#193B2A", "marginTop": "0"},
+        ),
+        html.P(
+            "Referencias calculadas con registros anteriores al "
+            "período consultado y del mismo sistema productivo. "
+            "Rendimientos ponderados por área cosechada.",
+            style={"color": "#64748B", "fontSize": "13px"},
+        ),
+        grafica_historica,
+        html.Div([
+            html.P(
+                "VARIACIÓN FRENTE AL PROMEDIO MUNICIPAL",
+                style={
+                    "fontSize": "12px",
+                    "fontWeight": "700",
+                    "color": "#64748B",
+                },
+            ),
+            html.H2(
+                texto_variacion,
+                style={"color": "#286A3B", "margin": "8px 0"},
+            ),
+            html.P(
+                explicacion_variacion,
+                style={"color": "#475569", "fontSize": "13px"},
+            ),
+        ], style={
+            "padding": "20px",
+            "backgroundColor": "#F7FAF7",
+            "border": "1px solid #DCE8DC",
+            "borderRadius": "9px",
+        }),
+    ], style={
+        "backgroundColor": "#FFFFFF",
+        "border": "1px solid #E0E4DE",
+        "borderRadius": "10px",
+        "padding": "24px",
+        "marginTop": "20px",
+    })
+
     periodo = f"{datos['anio']}-{'B' if datos['semestre'] == 1 else 'A'}"
 
     return html.Div([
@@ -1190,6 +1364,7 @@ def mostrar_resultados(datos):
             "borderRadius": "9px",
             "padding": "22px",
         }),
+                        seccion_historica,
     ])
 
 
