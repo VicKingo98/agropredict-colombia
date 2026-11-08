@@ -264,6 +264,8 @@ app.layout = html.Div(
         ),
 
         dcc.Store(id="ultima-prediccion", storage_type="memory"),
+        dcc.Download(id="descarga-individual-csv"),
+        dcc.Download(id="descarga-individual-excel"),
 
         html.Main(
             html.Div(
@@ -477,6 +479,10 @@ def mostrar_contenido(pestana):
                             {
                                 "label": " Múltiples municipios",
                                 "value": "multiple",
+                            },
+                            {
+                                "label": " Departamento completo",
+                                "value": "departamento",
                             },
                         ],
                         value="individual",
@@ -875,20 +881,26 @@ def actualizar_grafico(departamento, municipio, sistema, anio):
     Output("pred-municipio", "value"),
     Output("pred-municipio", "multi"),
     Output("pred-municipio", "placeholder"),
+    Output("pred-municipio", "disabled"),
     Input("pred-departamento", "value"),
     Input("pred-modalidad", "value"),
 )
 def actualizar_municipios_prediccion(departamento, modalidad):
     multiple = modalidad == "multiple"
+    departamento_completo = modalidad == "departamento"
     valor_vacio = [] if multiple else None
 
     placeholder = (
-        "Seleccione uno o varios municipios"
-        if multiple else "Seleccione un municipio"
+        "Todos los municipios del departamento"
+        if departamento_completo
+        else (
+            "Seleccione uno o varios municipios"
+            if multiple else "Seleccione un municipio"
+        )
     )
 
     if not departamento:
-        return [], valor_vacio, multiple, placeholder
+        return [], valor_vacio, multiple, placeholder, departamento_completo
 
     municipios = (
         df.loc[
@@ -907,7 +919,7 @@ def actualizar_municipios_prediccion(departamento, modalidad):
         for fila in municipios.itertuples()
     ]
 
-    return opciones, valor_vacio, multiple, placeholder
+    return opciones, valor_vacio, multiple, placeholder, departamento_completo
 
 
 
@@ -915,17 +927,25 @@ def actualizar_municipios_prediccion(departamento, modalidad):
     Output("pred-sistema", "options"),
     Output("pred-sistema", "value"),
     Input("pred-municipio", "value"),
+    Input("pred-departamento", "value"),
+    Input("pred-modalidad", "value"),
 )
-def actualizar_sistemas_prediccion(municipio):
-    if not municipio:
-        return [], None
+def actualizar_sistemas_prediccion(municipio, departamento, modalidad):
+    if modalidad == "departamento":
+        if not departamento:
+            return [], None
 
-    municipios = municipio if isinstance(municipio, list) else [municipio]
+        filtro = df["departamento"] == departamento
+    else:
+        if not municipio:
+            return [], None
+
+        municipios = municipio if isinstance(municipio, list) else [municipio]
+        filtro = df["cod_municipio"].isin(municipios)
 
     sistemas = sorted(
         df.loc[
-            df["cod_municipio"].isin(municipios)
-            & df["rendimiento_rezago"].notna(),
+            filtro & df["rendimiento_rezago"].notna(),
             "sistema_productivo"
         ].unique()
     )
@@ -949,15 +969,25 @@ def actualizar_sistemas_prediccion(municipio):
     Output("pred-anio", "value"),
     Input("pred-municipio", "value"),
     Input("pred-sistema", "value"),
+    Input("pred-departamento", "value"),
+    Input("pred-modalidad", "value"),
 )
-def actualizar_anios_prediccion(municipio, sistema):
-    if not municipio or not sistema:
+def actualizar_anios_prediccion(municipio, sistema, departamento, modalidad):
+    if not sistema:
         return [], None
 
-    municipios = municipio if isinstance(municipio, list) else [municipio]
+    if modalidad == "departamento":
+        if not departamento:
+            return [], None
+        filtro = df["departamento"] == departamento
+    else:
+        if not municipio:
+            return [], None
+        municipios = municipio if isinstance(municipio, list) else [municipio]
+        filtro = df["cod_municipio"].isin(municipios)
 
     datos = df.loc[
-        df["cod_municipio"].isin(municipios)
+        filtro
         & (df["sistema_productivo"] == sistema)
         & df["rendimiento_rezago"].notna()
     ]
@@ -979,15 +1009,27 @@ def actualizar_anios_prediccion(municipio, sistema):
     Input("pred-municipio", "value"),
     Input("pred-sistema", "value"),
     Input("pred-anio", "value"),
+    Input("pred-departamento", "value"),
+    Input("pred-modalidad", "value"),
 )
-def actualizar_semestres_prediccion(municipio, sistema, anio):
-    if not municipio or not sistema or anio is None:
+def actualizar_semestres_prediccion(
+    municipio, sistema, anio, departamento, modalidad
+):
+    if not sistema or anio is None:
         return [], None
 
-    municipios = municipio if isinstance(municipio, list) else [municipio]
+    if modalidad == "departamento":
+        if not departamento:
+            return [], None
+        filtro = df["departamento"] == departamento
+    else:
+        if not municipio:
+            return [], None
+        municipios = municipio if isinstance(municipio, list) else [municipio]
+        filtro = df["cod_municipio"].isin(municipios)
 
     datos = df.loc[
-        df["cod_municipio"].isin(municipios)
+        filtro
         & (df["sistema_productivo"] == sistema)
         & (df["anio"] == anio)
         & df["rendimiento_rezago"].notna()
@@ -1009,10 +1051,118 @@ def actualizar_semestres_prediccion(municipio, sistema, anio):
 
 
 
-def preparar_exportacion_multiple(departamento, municipios, sistema, anio, semestre):
-    """Prepara una tabla exportable con las predicciones múltiples."""
+def preparar_exportacion_individual(datos):
+    """Prepara una fila exportable a partir de una predicción individual."""
 
-    if not departamento or not municipios or not sistema or anio is None or semestre is None:
+    if not datos:
+        return pd.DataFrame()
+
+    estimado = float(datos["estimado"])
+    promedio_municipal = datos.get("promedio_municipal")
+
+    variacion = None
+    if (
+        promedio_municipal is not None
+        and pd.notna(promedio_municipal)
+        and float(promedio_municipal) != 0
+    ):
+        variacion = (
+            (estimado / float(promedio_municipal) - 1) * 100
+        )
+
+    fila = {
+        "Codigo DANE": str(datos["cod_municipio"]).zfill(5),
+        "Municipio": datos["municipio"],
+        "Departamento": datos["departamento"],
+        "Sistema productivo": datos["sistema"],
+        "Anio": int(datos["anio"]),
+        "Semestre": "B" if int(datos["semestre"]) == 1 else "A",
+        "Estimacion XGBoost (t/ha)": estimado,
+        "Persistencia (t/ha)": float(datos["persistencia"]),
+        "Rendimiento observado (t/ha)": float(datos["observado"]),
+        "Promedio historico municipal (t/ha)": datos.get("promedio_municipal"),
+        "Promedio historico departamental (t/ha)": datos.get("promedio_departamental"),
+        "Promedio historico nacional (t/ha)": datos.get("promedio_nacional"),
+        "Variacion frente al promedio municipal (%)": variacion,
+    }
+
+    return pd.DataFrame([fila])
+
+
+@app.callback(
+    Output("descarga-individual-csv", "data"),
+    Input("btn-descargar-individual-csv", "n_clicks"),
+    State("ultima-prediccion", "data"),
+    prevent_initial_call=True,
+)
+def descargar_prediccion_individual_csv(n_clicks, datos):
+    if not n_clicks or not datos:
+        raise PreventUpdate
+
+    tabla = preparar_exportacion_individual(datos)
+
+    if tabla.empty:
+        raise PreventUpdate
+
+    nombre = (
+        f"agropredict_individual_{datos['cod_municipio']}_"
+        f"{datos['anio']}_{'B' if datos['semestre'] == 1 else 'A'}.csv"
+    )
+
+    return dcc.send_data_frame(
+        tabla.to_csv,
+        nombre,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+
+@app.callback(
+    Output("descarga-individual-excel", "data"),
+    Input("btn-descargar-individual-excel", "n_clicks"),
+    State("ultima-prediccion", "data"),
+    prevent_initial_call=True,
+)
+def descargar_prediccion_individual_excel(n_clicks, datos):
+    if not n_clicks or not datos:
+        raise PreventUpdate
+
+    tabla = preparar_exportacion_individual(datos)
+
+    if tabla.empty:
+        raise PreventUpdate
+
+    nombre = (
+        f"agropredict_individual_{datos['cod_municipio']}_"
+        f"{datos['anio']}_{'B' if datos['semestre'] == 1 else 'A'}.xlsx"
+    )
+
+    return dcc.send_data_frame(
+        tabla.to_excel,
+        nombre,
+        index=False,
+        sheet_name="Prediccion individual",
+    )
+
+
+def preparar_exportacion_multiple(
+    departamento, municipios, sistema, anio, semestre, modalidad="multiple"
+):
+    """Prepara una tabla exportable con predicciones múltiples o departamentales."""
+
+    if not departamento or not sistema or anio is None or semestre is None:
+        return pd.DataFrame()
+
+    if modalidad == "departamento":
+        municipios = (
+            df.loc[
+                df["departamento"] == departamento,
+                "cod_municipio"
+            ]
+            .drop_duplicates()
+            .tolist()
+        )
+    elif not municipios:
         return pd.DataFrame()
 
     resultados, _ = calcular_predicciones_multiples(
@@ -1054,14 +1204,16 @@ def preparar_exportacion_multiple(departamento, municipios, sistema, anio, semes
     State("pred-sistema", "value"),
     State("pred-anio", "value"),
     State("pred-semestre", "value"),
+    State("pred-modalidad", "value"),
     prevent_initial_call=True,
 )
-def descargar_predicciones_csv(n_clicks, departamento, municipios, sistema, anio, semestre):
+def descargar_predicciones_csv(n_clicks, departamento, municipios, sistema, anio, semestre, modalidad):
     if not n_clicks:
         raise PreventUpdate
 
     tabla = preparar_exportacion_multiple(
-        departamento, municipios, sistema, anio, semestre
+        departamento, municipios, sistema, anio, semestre,
+        modalidad=modalidad
     )
 
     if tabla.empty:
@@ -1083,14 +1235,16 @@ def descargar_predicciones_csv(n_clicks, departamento, municipios, sistema, anio
     State("pred-sistema", "value"),
     State("pred-anio", "value"),
     State("pred-semestre", "value"),
+    State("pred-modalidad", "value"),
     prevent_initial_call=True,
 )
-def descargar_predicciones_excel(n_clicks, departamento, municipios, sistema, anio, semestre):
+def descargar_predicciones_excel(n_clicks, departamento, municipios, sistema, anio, semestre, modalidad):
     if not n_clicks:
         raise PreventUpdate
 
     tabla = preparar_exportacion_multiple(
-        departamento, municipios, sistema, anio, semestre
+        departamento, municipios, sistema, anio, semestre,
+        modalidad=modalidad
     )
 
     if tabla.empty:
@@ -1188,10 +1342,10 @@ def generar_prediccion(
     if not n_clicks:
         raise PreventUpdate
 
-    if modalidad == "multiple":
+    if modalidad in ("multiple", "departamento"):
         if (
             not departamento
-            or not municipio
+            or (modalidad == "multiple" and not municipio)
             or not sistema
             or anio is None
             or semestre is None
@@ -1201,8 +1355,24 @@ def generar_prediccion(
                 style={"color": "#b45309"},
             ), None
 
+        if modalidad == "departamento":
+            municipios_seleccionados = (
+                df.loc[
+                    df["departamento"] == departamento,
+                    "cod_municipio"
+                ]
+                .drop_duplicates()
+                .tolist()
+            )
+        else:
+            municipios_seleccionados = municipio
+
         resultados, omitidos = calcular_predicciones_multiples(
-            departamento, municipio, sistema, anio, semestre
+            departamento,
+            municipios_seleccionados,
+            sistema,
+            anio,
+            semestre,
         )
 
         if resultados.empty:
@@ -1249,7 +1419,11 @@ def generar_prediccion(
 
         contenido = html.Div([
             html.H3(
-                "Resultados de predicción múltiple",
+                (
+                    "Resultados de predicción departamental"
+                    if modalidad == "departamento"
+                    else "Resultados de predicción múltiple"
+                ),
                 style={"color": "#193B2A"},
             ),
             html.P(
@@ -1364,6 +1538,7 @@ def generar_prediccion(
     )
 
     datos_resultado = {
+        "cod_municipio": str(municipio).zfill(5),
         "promedio_municipal": promedios["municipal"],
         "promedio_departamental": promedios["departamental"],
         "promedio_nacional": promedios["nacional"],
@@ -1413,6 +1588,40 @@ def generar_prediccion(
             "Estimación retrospectiva basada en datos históricos. "
             "No representa un pronóstico futuro.",
             style={"color": "#64748b"},
+        ),
+        html.Div(
+            [
+                html.Button(
+                    "Descargar CSV",
+                    id="btn-descargar-individual-csv",
+                    style={
+                        "backgroundColor": "#286A3B",
+                        "color": "white",
+                        "border": "none",
+                        "borderRadius": "6px",
+                        "padding": "10px 16px",
+                        "cursor": "pointer",
+                    },
+                ),
+                html.Button(
+                    "Descargar Excel",
+                    id="btn-descargar-individual-excel",
+                    style={
+                        "backgroundColor": "#FFFFFF",
+                        "color": "#286A3B",
+                        "border": "1px solid #286A3B",
+                        "borderRadius": "6px",
+                        "padding": "10px 16px",
+                        "cursor": "pointer",
+                    },
+                ),
+            ],
+            style={
+                "display": "flex",
+                "gap": "12px",
+                "marginTop": "20px",
+                "flexWrap": "wrap",
+            },
         ),
     ], style={
         "padding": "24px",
