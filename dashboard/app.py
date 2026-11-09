@@ -19,6 +19,108 @@ app = dash.Dash(
 df = pd.read_parquet(ROOT / "data/processed/features_secuencial.parquet")
 
 
+# Geometrías municipales optimizadas del DANE (MGN 2025).
+import json
+import plotly.graph_objects as go
+
+RUTA_GEOJSON = (
+    ROOT / "data/geografica/municipios_dane_2025_plotly.geojson"
+)
+
+with RUTA_GEOJSON.open(encoding="utf-8") as archivo:
+    GEOJSON_MUNICIPIOS = json.load(archivo)
+
+
+def crear_mapa_municipal(departamento=None, municipio=None, sistema=None, anio=None):
+    """Mapa del rendimiento ponderado municipal según los filtros históricos."""
+    datos = df.copy()
+
+    if departamento:
+        datos = datos[datos["departamento"] == departamento]
+    if municipio:
+        datos = datos[datos["cod_municipio"] == municipio]
+    if sistema:
+        datos = datos[datos["sistema_productivo"] == sistema]
+    if anio is not None and anio != "todos":
+        datos = datos[datos["anio"] == int(anio)]
+
+    resumen = (
+        datos.groupby(
+            ["cod_municipio", "municipio", "departamento"],
+            as_index=False,
+        )
+        .agg(
+            produccion_total=("produccion", "sum"),
+            area_total=("area_cosechada", "sum"),
+        )
+    )
+
+    resumen = resumen[resumen["area_total"] > 0].copy()
+
+    resumen["rendimiento_ponderado"] = (
+        resumen["produccion_total"] / resumen["area_total"]
+    )
+
+    figura = go.Figure()
+
+    if not resumen.empty:
+        texto_hover = [
+            (
+                f"<b>{fila.municipio}</b>"
+                f"<br>Departamento: {fila.departamento}"
+                f"<br>Código DANE: {fila.cod_municipio}"
+                f"<br>Rendimiento: {fila.rendimiento_ponderado:.2f} t/ha"
+                "<extra></extra>"
+            )
+            for fila in resumen.itertuples()
+        ]
+
+        figura.add_trace(
+            go.Choropleth(
+                geojson=GEOJSON_MUNICIPIOS,
+                locations=resumen["cod_municipio"],
+                featureidkey="properties.MPIO_CDPMP",
+                z=resumen["rendimiento_ponderado"],
+                text=texto_hover,
+                hovertemplate="%{text}",
+                colorscale="YlGn",
+                colorbar=dict(title="Rendimiento<br>(t/ha)"),
+                marker_line_color="#475569",
+                marker_line_width=0.15,
+            )
+        )
+
+        figura.update_geos(
+            projection_type="mercator",
+            fitbounds="locations",
+            visible=False,
+            showland=False,
+            bgcolor="white",
+        )
+    else:
+        figura.add_annotation(
+            text="No hay datos para los filtros seleccionados.",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=15, color="#657168"),
+        )
+        figura.update_geos(visible=False)
+
+    figura.update_layout(
+        title="Distribución geográfica del rendimiento municipal",
+        height=650,
+        template="plotly_white",
+        paper_bgcolor="#FFFFFF",
+        font=dict(color="#27352B"),
+        margin=dict(l=10, r=10, t=60, b=10),
+    )
+
+    return figura
+
+
 def crear_figura_historica(departamento=None, municipio=None, sistema=None, anio=None):
     datos = df.copy()
 
@@ -415,6 +517,42 @@ def mostrar_contenido(pestana):
                 },
             ),
             html.Div(
+                [
+                    html.H3(
+                        "Mapa de rendimiento municipal",
+                        style={
+                            "fontSize": "16px",
+                            "marginTop": "0",
+                            "marginBottom": "6px",
+                        },
+                    ),
+                    html.P(
+                        "Rendimiento ponderado por área cosechada "
+                        "según los filtros seleccionados.",
+                        style={
+                            "color": "#657168",
+                            "fontSize": "13px",
+                            "marginTop": "0",
+                        },
+                    ),
+                    dcc.Loading(
+                        dcc.Graph(
+                            id="mapa-municipal",
+                            config={"displaylogo": False},
+                        ),
+                        type="circle",
+                    ),
+                ],
+                style={
+                    "backgroundColor": "#FFFFFF",
+                    "border": "1px solid #E0E4DE",
+                    "borderRadius": "7px",
+                    "padding": "12px",
+                    "marginTop": "16px",
+                    "marginBottom": "16px",
+                },
+            ),
+            html.Div(
                 dcc.Graph(id="grafico-historico"),
                 style={
                     "backgroundColor": "#FFFFFF",
@@ -758,6 +896,22 @@ def actualizar_municipios(departamento):
     ]
 
     return opciones, None
+
+
+@app.callback(
+    Output("mapa-municipal", "figure"),
+    Input("filtro-departamento", "value"),
+    Input("filtro-municipio", "value"),
+    Input("filtro-sistema", "value"),
+    Input("filtro-anios", "value"),
+)
+def actualizar_mapa_municipal(departamento, municipio, sistema, anio):
+    return crear_mapa_municipal(
+        departamento=departamento,
+        municipio=municipio,
+        sistema=sistema,
+        anio=anio,
+    )
 
 
 @app.callback(
