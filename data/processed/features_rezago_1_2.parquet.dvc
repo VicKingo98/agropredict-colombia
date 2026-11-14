@@ -1,0 +1,5 @@
+outs:
+- md5: e870e71d307544dc35797a0ff25a4e97
+  size: 231806
+  hash: md5
+  path: features_rezago_1_2.parquet

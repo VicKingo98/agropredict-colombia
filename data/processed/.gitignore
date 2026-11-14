@@ -2,3 +2,4 @@
 /maiz_preprocesado.csv
 /features_estacional.parquet
 /features_secuencial.parquet
+/features_rezago_1_2.parquet
