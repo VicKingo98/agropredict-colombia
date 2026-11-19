@@ -1,0 +1,22 @@
+FROM python:3.13-slim
+
+# Dependencia del sistema requerida por XGBoost
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Instalar dependencias de la API
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+# Copiar el código de la API y el modelo de producción
+COPY api/ ./api/
+COPY models/xgboost_maiz_t1_t2.skops ./models/
+
+# Puerto del servicio de inferencia
+EXPOSE 8000
+
+# Iniciar FastAPI
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

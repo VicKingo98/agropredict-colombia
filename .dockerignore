@@ -3,7 +3,13 @@
 
 # Archivos de configuración
 !Dockerfile
+!Dockerfile.api
 !requirements-dashboard.txt
+!requirements-api.txt
+
+# API de inferencia
+!api/
+!api/main.py
 
 # Dashboard
 !dashboard/

@@ -1,0 +1,12 @@
+# Procesamiento de datos
+pandas==3.1.0
+numpy==2.5.4
+
+# Modelo predictivo
+scikit-learn==1.9.1
+xgboost==3.4.1
+skops==0.16.0
+
+# Servicio de inferencia
+fastapi==0.162.0
+uvicorn==0.54.0

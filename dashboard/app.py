@@ -1,13 +1,17 @@
+import os
 from pathlib import Path
 
 import dash
 import pandas as pd
-import skops.io as sio
+import requests
 import plotly.express as px
 from dash import dcc, html, Input, Output, State
 from dash.exceptions import PreventUpdate
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Dirección del servicio de inferencia
+API_URL = os.getenv("AGROPREDICT_API_URL", "http://127.0.0.1:8000")
 
 app = dash.Dash(
     __name__,
@@ -254,19 +258,7 @@ def calcular_promedios_historicos(departamento, municipio, sistema, anio, semest
     }
 
 
-# Modelo optimizado y validado con datos de 2025
-RUTA_MODELO = ROOT / "models/xgboost_maiz_t1_t2.skops"
-
-TIPOS_PERMITIDOS = [
-    "xgboost.core.Booster",
-    "xgboost.sklearn.XGBRegressor",
-]
-
-modelo_predictivo = sio.load(
-    RUTA_MODELO,
-    trusted=TIPOS_PERMITIDOS,
-)
-
+# Variables requeridas por la API de inferencia
 VARIABLES_MODELO = [
     "semestre_b",
     "rendimiento_rezago_1",
@@ -274,6 +266,28 @@ VARIABLES_MODELO = [
     "departamento",
     "sistema_productivo",
 ]
+
+
+def predecir_api(entradas):
+    """Solicita predicciones a la API y conserva el orden de los registros."""
+    registros = entradas[VARIABLES_MODELO].to_dict(orient="records")
+
+    respuesta = requests.post(
+        f"{API_URL}/predict",
+        json={"registros": registros},
+        timeout=60,
+    )
+    respuesta.raise_for_status()
+
+    resultado = respuesta.json()
+    predicciones = resultado["predicciones"]
+
+    if len(predicciones) != len(registros):
+        raise ValueError(
+            "La API devolvió una cantidad inesperada de predicciones."
+        )
+
+    return predicciones
 
 
 ESTILO_PESTANA = {
@@ -1449,7 +1463,7 @@ def calcular_predicciones_multiples(
     if validos.empty:
         return pd.DataFrame(), seleccionados
 
-    validos["estimado"] = modelo_predictivo.predict(
+    validos["estimado"] = predecir_api(
         validos[VARIABLES_MODELO]
     )
 
@@ -1694,7 +1708,7 @@ def generar_prediccion(
         ), None
 
     entrada = registros[VARIABLES_MODELO]
-    estimacion = float(modelo_predictivo.predict(entrada)[0])
+    estimacion = float(predecir_api(entrada)[0])
 
     if not pd.notna(estimacion):
         return html.P("El modelo no produjo una estimación válida."), None

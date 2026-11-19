@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: agropredict-api:1.0
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agropredict-colombia:2.0
+    ports:
+      - "8050:8050"
+    environment:
+      AGROPREDICT_API_URL: http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
