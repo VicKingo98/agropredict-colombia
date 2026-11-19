@@ -16,7 +16,10 @@ app = dash.Dash(
 )
 
 # Datos históricos del proyecto
-df = pd.read_parquet(ROOT / "data/processed/features_secuencial.parquet")
+df = pd.read_parquet(ROOT / "data/processed/features_rezago_1_2.parquet")
+
+# Compatibilidad con las funciones históricas del dashboard
+df["rendimiento_rezago"] = df["rendimiento_rezago_1"]
 
 
 # Geometrías municipales optimizadas del DANE (MGN 2025).
@@ -252,7 +255,7 @@ def calcular_promedios_historicos(departamento, municipio, sistema, anio, semest
 
 
 # Modelo optimizado y validado con datos de 2025
-RUTA_MODELO = ROOT / "models/xgboost_maiz_optimizado.skops"
+RUTA_MODELO = ROOT / "models/xgboost_maiz_t1_t2.skops"
 
 TIPOS_PERMITIDOS = [
     "xgboost.core.Booster",
@@ -265,9 +268,9 @@ modelo_predictivo = sio.load(
 )
 
 VARIABLES_MODELO = [
-    "anio",
     "semestre_b",
-    "rendimiento_rezago",
+    "rendimiento_rezago_1",
+    "rendimiento_rezago_2",
     "departamento",
     "sistema_productivo",
 ]
@@ -758,9 +761,9 @@ def mostrar_contenido(pestana):
                     style={"color": "#193B2A", "marginTop": "0"},
                 ),
                 html.Div([
-                    html.Div("Año", style={"padding": "12px"}),
+                    html.Div("Rendimiento de dos períodos anteriores (t-2)", style={"padding": "12px"}),
                     html.Div("Semestre agrícola", style={"padding": "12px"}),
-                    html.Div("Rendimiento del semestre anterior",
+                    html.Div("Rendimiento del período anterior (t-1)",
                              style={"padding": "12px"}),
                     html.Div("Departamento", style={"padding": "12px"}),
                     html.Div("Sistema productivo",
@@ -785,8 +788,8 @@ def mostrar_contenido(pestana):
                     "Evaluación temporal",
                     style={"color": "#193B2A", "marginTop": "0"},
                 ),
-                html.P("Entrenamiento: 2019–2024 (10.304 registros)."),
-                html.P("Prueba independiente: 2025 (1.841 registros)."),
+                html.P("Entrenamiento para evaluación: 2020–2024 (9.047 registros)."),
+                html.P("Prueba independiente: 2025 (1.735 registros)."),
 
                 html.Table([
                     html.Thead(html.Tr([
@@ -797,18 +800,18 @@ def mostrar_contenido(pestana):
                     html.Tbody([
                         html.Tr([
                             html.Td("MAE (t/ha)"),
-                            html.Td("0,2342"),
-                            html.Td("0,1530"),
+                            html.Td("0,2160"),
+                            html.Td("0,1478"),
                         ]),
                         html.Tr([
                             html.Td("RMSE (t/ha)"),
-                            html.Td("0,4064"),
-                            html.Td("0,4246"),
+                            html.Td("0,3708"),
+                            html.Td("0,4140"),
                         ]),
                         html.Tr([
                             html.Td("R²"),
-                            html.Td("0,9134"),
-                            html.Td("0,9054"),
+                            html.Td("0,9275"),
+                            html.Td("0,9097"),
                         ]),
                     ]),
                 ], style={
@@ -819,8 +822,8 @@ def mostrar_contenido(pestana):
                 }),
 
                 html.P(
-                    "XGBoost obtuvo menor RMSE y mayor R² que persistencia, "
-                    "mientras que persistencia presentó menor MAE.",
+                    "En la prueba independiente de 2025, XGBoost redujo el RMSE ""un 10,42 % frente a persistencia y obtuvo mayor R², "
+                    "mientras que persistencia presentó menor MAE. ""Posteriormente, el modelo de producción se reentrenó ""con los 10.782 registros disponibles de 2020–2025.",
                     style={
                         "backgroundColor": "#F7FAF7",
                         "padding": "14px",
@@ -1099,7 +1102,8 @@ def actualizar_sistemas_prediccion(municipio, departamento, modalidad):
 
     sistemas = sorted(
         df.loc[
-            filtro & df["rendimiento_rezago"].notna(),
+            filtro & df["rendimiento_rezago_1"].notna()
+            & df["rendimiento_rezago_2"].notna(),
             "sistema_productivo"
         ].unique()
     )
@@ -1143,7 +1147,8 @@ def actualizar_anios_prediccion(municipio, sistema, departamento, modalidad):
     datos = df.loc[
         filtro
         & (df["sistema_productivo"] == sistema)
-        & df["rendimiento_rezago"].notna()
+        & df["rendimiento_rezago_1"].notna()
+        & df["rendimiento_rezago_2"].notna()
     ]
 
     anios = sorted(datos["anio"].unique())
@@ -1186,7 +1191,8 @@ def actualizar_semestres_prediccion(
         filtro
         & (df["sistema_productivo"] == sistema)
         & (df["anio"] == anio)
-        & df["rendimiento_rezago"].notna()
+        & df["rendimiento_rezago_1"].notna()
+        & df["rendimiento_rezago_2"].notna()
     ]
 
     semestres = sorted(datos["semestre_b"].unique())
@@ -1428,7 +1434,8 @@ def calcular_predicciones_multiples(
         & (df["sistema_productivo"] == sistema)
         & (df["anio"] == anio)
         & (df["semestre_b"] == semestre)
-        & df["rendimiento_rezago"].notna()
+        & df["rendimiento_rezago_1"].notna()
+        & df["rendimiento_rezago_2"].notna()
     ].copy()
 
     # Solo se procesan municipios con un registro único.
@@ -1676,9 +1683,14 @@ def generar_prediccion(
 
     registro = registros.iloc[0]
 
-    if pd.isna(registro["rendimiento_rezago"]):
+    if (
+        pd.isna(registro["rendimiento_rezago_1"])
+        or pd.isna(registro["rendimiento_rezago_2"])
+    ):
         return html.P(
-            "No existe rendimiento del semestre anterior para esta selección."
+            "No existen suficientes antecedentes históricos "
+            "para esta selección. Se requieren los rendimientos "
+            "de los dos períodos anteriores (t-1 y t-2)."
         ), None
 
     entrada = registros[VARIABLES_MODELO]
