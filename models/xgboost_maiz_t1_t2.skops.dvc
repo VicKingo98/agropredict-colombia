@@ -1,0 +1,5 @@
+outs:
+- md5: f8ce7241d4ca7387857088585e0d366e
+  size: 360897
+  hash: md5
+  path: xgboost_maiz_t1_t2.skops
