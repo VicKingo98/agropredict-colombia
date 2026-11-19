@@ -1,0 +1,26 @@
+# Excluir todo por defecto
+**
+
+# Archivos de configuración
+!Dockerfile
+!requirements-dashboard.txt
+
+# Dashboard
+!dashboard/
+!dashboard/**
+
+# Modelo de producción
+!models/
+!models/xgboost_maiz_t1_t2.skops
+
+# Datos necesarios
+!data/
+!data/processed/
+!data/processed/features_rezago_1_2.parquet
+!data/geografica/
+!data/geografica/municipios_dane_2025_plotly.geojson
+
+# Excluir archivos temporales y respaldos
+**/__pycache__/
+**/*.pyc
+**/*.bak
