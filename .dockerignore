@@ -7,8 +7,7 @@
 !requirements-dashboard.txt
 !requirements-api.txt
 
-# API de inferencia
-!api/
+# API de inferencia (solo el código; nunca la carpeta completa)
 !api/main.py
 
 # Paquete del modelo (se construye dentro de Dockerfile.api)
