@@ -3,10 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-    image: agropredict-api:1.0
+    image: agropredict-api:1.1
     ports:
       - "8000:8000"
     restart: unless-stopped
+    # La imagen no trae curl; se consulta /health con Python
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   dashboard:
     build:
@@ -16,7 +23,9 @@ services:
     ports:
       - "8050:8050"
     environment:
+      # Dentro de la red de compose, la API se alcanza por el nombre del servicio
       AGROPREDICT_API_URL: http://api:8000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped

@@ -268,24 +268,44 @@ VARIABLES_MODELO = [
 ]
 
 
+class ErrorAPI(Exception):
+    """Error de comunicación con el servicio de predicción, con mensaje para el usuario."""
+
+
 def predecir_api(entradas):
-    """Solicita predicciones a la API y conserva el orden de los registros."""
+    """Solicita predicciones a la API y conserva el orden de los registros.
+
+    Devuelve una lista del mismo largo que `entradas`, con None en los registros
+    que la API no pudo predecir (por ejemplo, una categoría no vista en el entrenamiento).
+    Lanza ErrorAPI si la API no responde o devuelve un error inesperado.
+    """
     registros = entradas[VARIABLES_MODELO].to_dict(orient="records")
 
-    respuesta = requests.post(
-        f"{API_URL}/predict",
-        json={"registros": registros},
-        timeout=60,
-    )
-    respuesta.raise_for_status()
+    try:
+        respuesta = requests.post(
+            f"{API_URL}/predict",
+            json={"registros": registros},
+            timeout=60,
+        )
+    except requests.RequestException as error:
+        raise ErrorAPI(
+            "No fue posible conectar con el servicio de predicción. "
+            "Intente nuevamente en unos segundos."
+        ) from error
 
-    resultado = respuesta.json()
-    predicciones = resultado["predicciones"]
+    # 422: ningún registro fue válido para el modelo
+    if respuesta.status_code == 422:
+        return [None] * len(registros)
+
+    if not respuesta.ok:
+        raise ErrorAPI(
+            f"El servicio de predicción respondió con un error ({respuesta.status_code})."
+        )
+
+    predicciones = respuesta.json()["predicciones"]
 
     if len(predicciones) != len(registros):
-        raise ValueError(
-            "La API devolvió una cantidad inesperada de predicciones."
-        )
+        raise ErrorAPI("La API devolvió una cantidad inesperada de predicciones.")
 
     return predicciones
 
@@ -1542,13 +1562,16 @@ def generar_prediccion(
         else:
             municipios_seleccionados = municipio
 
-        resultados, omitidos = calcular_predicciones_multiples(
-            departamento,
-            municipios_seleccionados,
-            sistema,
-            anio,
-            semestre,
-        )
+        try:
+            resultados, omitidos = calcular_predicciones_multiples(
+                departamento,
+                municipios_seleccionados,
+                sistema,
+                anio,
+                semestre,
+            )
+        except ErrorAPI as error:
+            return html.P(str(error), style={"color": "#b91c1c"}), None
 
         if resultados.empty:
             return html.P(
@@ -1708,10 +1731,20 @@ def generar_prediccion(
         ), None
 
     entrada = registros[VARIABLES_MODELO]
-    estimacion = float(predecir_api(entrada)[0])
 
-    if not pd.notna(estimacion):
-        return html.P("El modelo no produjo una estimación válida."), None
+    try:
+        estimacion = predecir_api(entrada)[0]
+    except ErrorAPI as error:
+        return html.P(str(error), style={"color": "#b91c1c"}), None
+
+    if estimacion is None:
+        return html.P(
+            "El modelo no puede estimar esta combinación: el departamento o el "
+            "sistema productivo no estaba en los datos de entrenamiento.",
+            style={"color": "#b45309"},
+        ), None
+
+    estimacion = float(estimacion)
 
     promedios = calcular_promedios_historicos(
         departamento, municipio, sistema, anio, semestre
