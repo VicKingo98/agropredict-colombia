@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agropredict-model"
+version = "1.0.0"
+description = "Modelo XGBoost para estimar el rendimiento municipal del maíz en Colombia (AgroPredict Colombia)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Victor Osorio" },
+    { name = "Javier Cañarte" },
+    { name = "Simón Jaramillo" },
+]
+# Versiones fijas: el .skops debe cargarse con las mismas versiones con que se entrenó
+dependencies = [
+    "pandas==3.1.0",
+    "numpy==2.5.4",
+    "scikit-learn==1.9.1",
+    "xgboost==3.4.1",
+    "skops==0.16.0",
+    "pydantic>=2,<3",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["agropredict_model*"]
+
+[tool.setuptools.package-data]
+agropredict_model = ["trained_models/*.skops", "trained_models/*.json"]

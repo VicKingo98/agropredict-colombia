@@ -15,7 +15,7 @@ skops==0.16.0
 python-dotenv==1.2.4
 
 # Versionamiento de datos
-dvc[gdrive]
+dvc[gdrive]==3.67.1
 
 # Visualización
 matplotlib==3.11.2
@@ -28,3 +28,8 @@ jupyterlab==4.6.4
 dash==4.5.0
 plotly==7.1.0
 requests==2.32.5
+
+# Empaquetado y pruebas del modelo
+build==1.6.1
+pytest==9.2.0
+tox==4.67.15

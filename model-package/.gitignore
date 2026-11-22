@@ -1,0 +1,11 @@
+build/
+dist/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+
+# Copias de models/ generadas por build.sh (el original se versiona con DVC)
+agropredict_model/trained_models/*.skops
+agropredict_model/trained_models/*.json
+
+.tox/
