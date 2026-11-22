@@ -11,22 +11,37 @@
 !api/
 !api/main.py
 
+# Paquete del modelo (se construye dentro de Dockerfile.api)
+!model-package/
+!model-package/**
+
+# Modelo de producción y sus metadatos (models/ se obtiene con dvc pull)
+!models/xgboost_maiz_t1_t2.skops
+!models/xgboost_maiz_t1_t2.json
+
 # Dashboard
 !dashboard/
 !dashboard/**
 
-# Modelo de producción
-!models/
-!models/xgboost_maiz_t1_t2.skops
-
-# Datos necesarios
-!data/
-!data/processed/
+# Datos que usa el dashboard
 !data/processed/features_rezago_1_2.parquet
-!data/geografica/
 !data/geografica/municipios_dane_2025_plotly.geojson
 
-# Excluir archivos temporales y respaldos
+# -----------------------------------------------------------------------------
+# Volver a excluir artefactos locales dentro de lo permitido
+# -----------------------------------------------------------------------------
+
+# Resultados de build.sh y tox en la máquina local: el wheel se construye
+# de cero dentro de la imagen
+model-package/.tox/
+model-package/dist/
+model-package/build/
+model-package/**/*.egg-info
+model-package/agropredict_model/trained_models/*.skops
+model-package/agropredict_model/trained_models/*.json
+
+# Archivos temporales, caché y respaldos
 **/__pycache__/
 **/*.pyc
+**/.pytest_cache/
 **/*.bak

@@ -1,22 +1,70 @@
+# =============================================================================
+# Dockerfile de la API de inferencia de AgroPredict Colombia
+#
+# Construcción en dos etapas (multi-stage):
+#   1. build: genera el wheel del paquete agropredict-model con el modelo adentro.
+#   2. final: imagen limpia que instala ese wheel y ejecuta la API con uvicorn.
+#
+# Así las herramientas de construcción y los archivos intermedios (código fuente
+# del paquete, .skops suelto) no quedan en la imagen final, y el wheel no se
+# versiona en Git: se genera en cada build a partir del código y el modelo vigentes.
+#
+# Requisito previo: `dvc pull`, para que exista models/xgboost_maiz_t1_t2.skops
+#
+# Uso (desde la raíz del repo):
+#   docker build -f Dockerfile.api -t agropredict-api:1.0 .
+#   docker run -p 8000:8000 agropredict-api:1.0
+# =============================================================================
+
+
+# =============================================================================
+# Etapa 1: construir el wheel del modelo
+# =============================================================================
+FROM python:3.13-slim AS build
+
+WORKDIR /build
+
+# Herramienta para construir el wheel a partir de pyproject.toml
+RUN pip install --no-cache-dir build==1.6.1
+
+# Código del paquete y modelo vigente con sus metadatos
+COPY model-package/ ./model-package/
+COPY models/xgboost_maiz_t1_t2.skops models/xgboost_maiz_t1_t2.json ./models/
+
+# build.sh copia el .skops y el .json dentro del paquete y genera
+# model-package/dist/agropredict_model-<versión>-py3-none-any.whl
+RUN bash model-package/build.sh
+
+
+# =============================================================================
+# Etapa 2: imagen final de la API
+# =============================================================================
 FROM python:3.13-slim
 
-# Dependencia del sistema requerida por XGBoost
+# XGBoost necesita la librería de OpenMP (libgomp) para ejecutarse
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Instalar dependencias de la API
+# requirements-api.txt solo trae FastAPI y uvicorn.
+# Las dependencias del modelo (pandas, numpy, scikit-learn, xgboost, skops y
+# pydantic) las instala el wheel, según su pyproject.toml.
 COPY requirements-api.txt .
-RUN pip install --no-cache-dir -r requirements-api.txt
 
-# Copiar el código de la API y el modelo de producción
+# Se trae únicamente el wheel construido en la etapa 1
+COPY --from=build /build/model-package/dist/*.whl /tmp/
+
+# Instalar la API y el paquete del modelo; luego borrar el wheel
+RUN pip install --no-cache-dir -r requirements-api.txt /tmp/*.whl \
+    && rm /tmp/*.whl
+
+# Código de la API (usa agropredict_model, ya instalado)
 COPY api/ ./api/
-COPY models/xgboost_maiz_t1_t2.skops ./models/
 
 # Puerto del servicio de inferencia
 EXPOSE 8000
 
-# Iniciar FastAPI
+# --host 0.0.0.0 permite recibir peticiones desde fuera del contenedor
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
