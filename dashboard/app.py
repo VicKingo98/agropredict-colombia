@@ -310,6 +310,19 @@ def predecir_api(entradas):
     return predicciones
 
 
+def consultar_metadatos_modelo():
+    """Obtiene las métricas y características del modelo desde FastAPI."""
+    try:
+        respuesta = requests.get(
+            f"{API_URL}/modelo",
+            timeout=10,
+        )
+        respuesta.raise_for_status()
+        return respuesta.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+
 ESTILO_PESTANA = {
     "padding": "14px 18px",
     "backgroundColor": "#1D3B2A",
@@ -431,6 +444,36 @@ app.layout = html.Div(
     Input("pestanas", "value"),
 )
 def mostrar_contenido(pestana):
+    metadatos_modelo = (
+        consultar_metadatos_modelo() if pestana == "modelo" else None
+    )
+
+    def formatear_metrica(nombre, grupo="metricas_test_2025"):
+        if not metadatos_modelo:
+            return "No disponible"
+        valor = metadatos_modelo.get(grupo, {}).get(nombre)
+        return f"{valor:.4f}".replace(".", ",") if valor is not None else "No disponible"
+
+    resumen_evaluacion = (
+        "No fue posible consultar las métricas actualizadas del modelo."
+    )
+    if metadatos_modelo:
+        metricas = metadatos_modelo.get("metricas_test_2025", {})
+        persistencia = metadatos_modelo.get("metricas_persistencia_2025", {})
+        rmse_xgb = metricas.get("rmse")
+        rmse_base = persistencia.get("rmse")
+
+        if rmse_xgb is not None and rmse_base:
+            mejora = (1 - rmse_xgb / rmse_base) * 100
+            resumen_evaluacion = (
+                f"En la prueba independiente de 2025, XGBoost redujo "
+                f"el RMSE un {mejora:.2f} % frente a persistencia y "
+                "obtuvo mayor R², mientras que persistencia presentó "
+                "menor MAE. Posteriormente, el modelo de producción "
+                "se reentrenó con los 10.782 registros disponibles "
+                "de 2020–2025."
+            )
+
     contenidos = {
         "historico": (
             "Consulta histórica",
@@ -834,18 +877,18 @@ def mostrar_contenido(pestana):
                     html.Tbody([
                         html.Tr([
                             html.Td("MAE (t/ha)"),
-                            html.Td("0,2160"),
-                            html.Td("0,1478"),
+                            html.Td(formatear_metrica("mae")),
+                            html.Td(formatear_metrica("mae", "metricas_persistencia_2025")),
                         ]),
                         html.Tr([
                             html.Td("RMSE (t/ha)"),
-                            html.Td("0,3708"),
-                            html.Td("0,4140"),
+                            html.Td(formatear_metrica("rmse")),
+                            html.Td(formatear_metrica("rmse", "metricas_persistencia_2025")),
                         ]),
                         html.Tr([
                             html.Td("R²"),
-                            html.Td("0,9275"),
-                            html.Td("0,9097"),
+                            html.Td(formatear_metrica("r2")),
+                            html.Td(formatear_metrica("r2", "metricas_persistencia_2025")),
                         ]),
                     ]),
                 ], style={
@@ -856,8 +899,7 @@ def mostrar_contenido(pestana):
                 }),
 
                 html.P(
-                    "En la prueba independiente de 2025, XGBoost redujo el RMSE ""un 10,42 % frente a persistencia y obtuvo mayor R², "
-                    "mientras que persistencia presentó menor MAE. ""Posteriormente, el modelo de producción se reentrenó ""con los 10.782 registros disponibles de 2020–2025.",
+                    resumen_evaluacion,
                     style={
                         "backgroundColor": "#F7FAF7",
                         "padding": "14px",
