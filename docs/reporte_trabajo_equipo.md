@@ -48,9 +48,9 @@
 | 25 oct | Documentación de hallazgos del EDA sobre el rendimiento del maíz | `docs: document EDA findings for maize yield` |
 | 7 nov | Guía de reproducibilidad: instalación del entorno, configuración de MLflow en EC2 y estado del proyecto; revisión e integración del PR #1 | `Agrega documentación de instalación, MLflow en EC2…`, `Merge pull request #1` |
 | 21–22 nov | Validación de la reproducibilidad en un segundo equipo (Windows): instalación de Docker, construcción de las imágenes y pruebas de la API (`/health`, `/modelo`, `/predict` por lotes) y del tablero | Soportes 08–11 |
-| 22 nov | Detección y corrección del error de finales de línea que impedía construir la API en Windows (archivo `.gitattributes`) | `[completar con el commit]` |
+| 22 nov | Detección y corrección del error de finales de línea que impedía construir la API en Windows (archivo `.gitattributes`) | `Agregar .gitattributes para conservar finales de línea LF…` |
 | 21–22 nov | Soportes de DVC (carpeta remota, trazabilidad del modelo y descarga) | Soportes 02–03 |
-| 21–22 nov | Documentación de la Entrega 3: manual de instalación (local y AWS EC2), manual de usuario con capturas y ejemplos, lista de soportes y reporte de trabajo en equipo | `[completar con el commit]` |
+| 21–22 nov | Documentación de la Entrega 3: manual de instalación (local y AWS EC2), manual de usuario con capturas y ejemplos, lista de soportes y reporte de trabajo en equipo | `Agregar manuales de instalación y usuario, reporte de trabajo en equipo y soportes…` |
 | 21–22 nov | Borrador del reporte de 10 páginas, con la respuesta a la retroalimentación de la Entrega 2 sobre XGBoost frente a la persistencia | `[enlace o archivo del reporte]` |
 
 ## 3. Decisiones tomadas en equipo

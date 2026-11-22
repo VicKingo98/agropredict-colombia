@@ -185,8 +185,11 @@ Presenta lo más relevante del modelo de aprendizaje utilizado para estimar el r
 **El tablero dice que no hay datos para mi selección.**
 Pruebe con otro año o sistema productivo. No todos los municipios reportan ambos sistemas en todos los semestres.
 
-**La predicción tarda o muestra un error.**
-El tablero depende del servicio de predicción (API). Informe al administrador para que verifique que esté activo (ver *Manual de instalación*).
+**Aparece el mensaje "No fue posible conectar con el servicio de predicción".**
+El tablero depende del servicio de predicción (API). Espere unos segundos y vuelva a intentarlo; si persiste, informe al administrador para que verifique que el servicio esté activo (ver *Manual de instalación*). La consulta histórica sigue funcionando, porque no usa el servicio de predicción.
+
+**Aparece el mensaje "El modelo no puede estimar esta combinación".**
+El departamento o el sistema productivo elegido no estaba en los datos con que se entrenó el modelo, así que no hay base para estimarlo. Pruebe con otro sistema productivo o con otro municipio.
 
 **¿Puedo cargar mis propios datos?**
 No en esta versión. El prototipo trabaja con la base EVA incluida en el proyecto.
