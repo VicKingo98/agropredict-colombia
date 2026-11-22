@@ -1,0 +1,85 @@
+{
+  "nombre_registry": "agropredict-maiz-xgb",
+  "version_registry": 1,
+  "alias": "champion",
+  "run_id_produccion": "5694caa8bcbb4eb4a038ef0cfc0613d2",
+  "run_id_evaluacion_2025": "b5caadcb80ce4be79a7067e17cb073d3",
+  "experimento": "agropredict-maiz-rezagos-t1-t2",
+  "variables": [
+    "semestre_b",
+    "rendimiento_rezago_1",
+    "rendimiento_rezago_2",
+    "departamento",
+    "sistema_productivo"
+  ],
+  "categoricas": [
+    "departamento",
+    "sistema_productivo"
+  ],
+  "numericas": [
+    "semestre_b",
+    "rendimiento_rezago_1",
+    "rendimiento_rezago_2"
+  ],
+  "departamentos": [
+    "Amazonas",
+    "Antioquia",
+    "Arauca",
+    "Atlántico",
+    "Bolívar",
+    "Boyacá",
+    "Caldas",
+    "Caquetá",
+    "Casanare",
+    "Cauca",
+    "Cesar",
+    "Chocó",
+    "Cundinamarca",
+    "Córdoba",
+    "Guainía",
+    "Guaviare",
+    "Huila",
+    "La Guajira",
+    "Magdalena",
+    "Meta",
+    "Nariño",
+    "Norte de Santander",
+    "Putumayo",
+    "Quindío",
+    "Risaralda",
+    "Santander",
+    "Sucre",
+    "Tolima",
+    "Valle del Cauca",
+    "Vaupés",
+    "Vichada"
+  ],
+  "sistemas_productivos": [
+    "tecnificado",
+    "tradicional"
+  ],
+  "hiperparametros": {
+    "learning_rate": 0.03,
+    "max_depth": 3,
+    "n_estimators": 200,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "random_state": 42
+  },
+  "periodo_entrenamiento": "2020-2025",
+  "observaciones_entrenamiento": 10782,
+  "metricas_test_2025": {
+    "rmse": 0.3677,
+    "mae": 0.2139,
+    "r2": 0.9287
+  },
+  "metricas_persistencia_2025": {
+    "rmse": 0.414,
+    "mae": 0.1478,
+    "r2": 0.9097
+  },
+  "tipos_skops_confiables": [
+    "xgboost.core.Booster",
+    "xgboost.sklearn.XGBRegressor"
+  ]
+}
