@@ -33,6 +33,7 @@ Servidor MLflow 3.18.0 en la instancia EC2 `mlflow-server` (t2.medium), experime
 | Comparación de modelos en validación 2024 | Captura de la corrida `Comparacion_modelos_validacion_2024` → `05_mlflow_comparacion.png` | ☐ Falta |
 | Evaluación final 2025: métricas y parámetros | `06_mlflow_eval_2025.png` | ✅ |
 | Evaluación final 2025: XGBoost frente a persistencia | `06b_mlflow_eval_2025_vs_persistencia.png` | ✅ |
+| Error de XGBoost y persistencia en 2025: registros que repiten el valor anterior frente a registros que cambian | `06c_mlflow_errores_repetidos_vs_cambios.png` | ✅ |
 | Modelo registrado `agropredict-maiz-xgb`, alias `champion` | `07_mlflow_registry.png` | ✅ |
 | Versión 1: descripción, corrida de origen y esquema de entrada/salida | `07b_mlflow_registry_version1.png` | ✅ |
 
@@ -58,7 +59,7 @@ Instancia EC2 `agropredict-model` (t3.medium, us-east-1 Norte de Virginia, IP p�
 | Soporte | Evidencia | Estado |
 |---|---|---|
 | Instancia en ejecución (tipo, región, IP) | Consola EC2 → `12_ec2_instancia.png` | ✅ |
-| Reglas del grupo de seguridad (puertos 22, 8000, 8050) | Pestaña *Seguridad* de la instancia → `13_ec2_security_group.png` | ☐ Falta |
+| Reglas de entrada del grupo de seguridad (TCP 8000 y 8050, SSH 22; origen 0.0.0.0/0) | `13_ec2_security_group.png` | ✅ |
 | Contenedores activos en el servidor (API *healthy*, imágenes 1.1 y 2.0) | `docker compose up --build` y `docker compose ps` por SSH → `14_ec2_compose_ps.png` | ✅ |
 | Tablero accesible por IP pública | Predicción de Samaná (Caldas) en `http://52.91.184.169:8050` → `15_tablero_publico.png` | ✅ |
 | API accesible por IP pública | `/health` desde `http://52.91.184.169:8000/docs` → `16_api_publica.png` | ✅ |
