@@ -7,7 +7,7 @@
 | Soporte | Evidencia | Estado |
 |---|---|---|
 | Código completo (notebooks, API, tablero, Dockerfiles, `compose.yaml`) | https://github.com/VicKingo98/agropredict-colombia | ✅ |
-| Aportes de todos los integrantes | Historial de commits del repositorio y `docs/reporte_trabajo_equipo.md` | ✅ |
+| Aportes de todos los integrantes | Historial de commits del repositorio y `docs/reporte_trabajo_equipo.pdf` | ✅ |
 | Pipelines de procesamiento y entrenamiento | Notebooks `02`, `03`, `04.1` y `05.1` en `notebooks/` | ✅ |
 
 ## 2. Datos versionados en DVC
@@ -65,5 +65,5 @@ Instancia EC2 `agropredict-model` (t3.medium, us-east-1 Norte de Virginia) con D
 |---|---|---|
 | Manual de instalación | `docs/manual_instalacion.md` | ✅ |
 | Manual de usuario del tablero | `docs/manual_usuario.md` (capturas en `docs/img/`) | ✅ |
-| Reporte de trabajo en equipo | `docs/reporte_trabajo_equipo.md` | ✅ |
+| Reporte de trabajo en equipo | `docs/reporte_trabajo_equipo.pdf` | ✅ |
 | Video (máx. 10 min, con los tres integrantes, mostrando el despliegue y sus recursos) | https://youtu.be/S0w2Fk9QMWE | ✅ |
