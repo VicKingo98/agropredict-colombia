@@ -17,7 +17,7 @@ Está pensado para analistas y planificadores agropecuarios que necesitan:
 Abra en el navegador la dirección del tablero:
 
 - En un computador local: `http://localhost:8050`
-- En el servidor desplegado: `http://IP_PUBLICA:8050` *(completar con la dirección definitiva)*
+- En el servidor desplegado: `http://IP_PUBLICA:8050`, donde `IP_PUBLICA` es la IP pública de la instancia EC2 `agropredict-model`. Esa IP cambia cada vez que la instancia se reinicia; al momento de las pruebas era 52.91.184.169.
 
 No requiere usuario ni contraseña. En la parte superior aparecen cuatro pestañas, que siguen el orden natural de uso:
 

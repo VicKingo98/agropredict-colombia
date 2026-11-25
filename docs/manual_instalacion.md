@@ -268,7 +268,7 @@ La dirección IP pública cambia cada vez que una instancia se detiene y se vuel
 | 8050 | Tablero | Público o las IPs del equipo y tutores |
 | 8000 | API (para mostrar `/docs` y `/health`) | Las IPs del equipo y tutores |
 
-*[Completar con las reglas reales de la instancia `agropredict-model` — soporte 13.]*
+En la instancia `agropredict-model` las reglas de entrada permiten TCP 8000, TCP 8050 y SSH 22 desde cualquier origen (0.0.0.0/0), lo que basta para el prototipo. En un despliegue de producción, el puerto 22 debe restringirse a la IP de quien administra.
 
 ### 7.3 Conectarse e instalar Docker
 
